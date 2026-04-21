@@ -4,6 +4,28 @@
 
 <h2>Login</h2>
 
+<input id="u" placeholder="username">
+<input id="p" placeholder="password" type="password">
+<button onclick="login()">Login</button>
+
+<script>
+async function login(){
+ let r=await fetch("/login",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    username:u.value,
+    password:p.value
+  })
+ })
+ let d=await r.json()
+ localStorage.setItem("token",d.token)
+ location="/chat-page"
+}
+</script>
+```
+
+
 <input id="username" placeholder="username">
 <input id="password" type="password" placeholder="password">
 <button onclick="login()">Login</button>

@@ -3,8 +3,8 @@ flask-cors
 flask-socketio
 gunicorn
 gevent
-requests
+SQLAlchemy
 groq
 stripe
-psycopg2-binary
-redis
+requests
+

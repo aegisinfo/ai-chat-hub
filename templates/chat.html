@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,255 +9,245 @@
 
 <style>
 body{
-    margin:0;
-    display:flex;
-    height:100vh;
-    background:#020617;
-    color:white;
-    font-family:sans-serif;
+  margin:0;
+  display:flex;
+  height:100vh;
+  background:#020617;
+  color:white;
+  font-family:sans-serif;
 }
 
 .sidebar{
-    width:260px;
-    background:#111827;
-    padding:10px;
-    overflow:auto;
+  width:260px;
+  background:#111827;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
 }
 
 .main{
-    flex:1;
-    display:flex;
-    flex-direction:column;
+  flex:1;
+  display:flex;
+  flex-direction:column;
 }
 
-.messages{
-    flex:1;
-    overflow:auto;
-    padding:20px;
+#messages{
+  flex:1;
+  overflow:auto;
+  padding:20px;
 }
 
 .msg{
-    margin-bottom:10px;
-    padding:10px;
-    background:#1f2937;
-    border-radius:8px;
+  margin:10px;
+  padding:12px;
+  border-radius:10px;
+  max-width:70%;
 }
 
-.chat-item{
-    padding:10px;
-    cursor:pointer;
-    border-radius:6px;
-}
-
-.chat-item:hover{
-    background:#1f2937;
-}
+.user{background:#1f2937; align-self:flex-end}
+.ai{background:#0f172a; align-self:flex-start}
 
 input{
-    flex:1;
-    padding:10px;
-    background:#1f2937;
-    color:white;
-    border:none;
-    border-radius:6px;
+  padding:12px;
+  border:none;
+  outline:none;
+  background:#1f2937;
+  color:white;
 }
 
 button{
-    padding:10px;
-    background:#22c55e;
-    border:none;
-    border-radius:6px;
-    color:white;
-    margin-left:5px;
+  padding:12px;
+  background:#22c55e;
+  border:none;
+  cursor:pointer;
 }
 
-.top{
-    display:flex;
-    padding:10px;
+.chat-item{
+  padding:10px;
+  cursor:pointer;
+}
+.chat-item:hover{
+  background:#1f2937;
+}
+
+.banner{
+  position:fixed;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:red;
+  padding:10px;
+  display:none;
 }
 </style>
 </head>
 
 <body>
 
+<div id="banner" class="banner"></div>
+
+<!-- SIDEBAR -->
 <div class="sidebar">
-    <input id="search" placeholder="Search..." oninput="searchChats()">
-    <button onclick="newChat()">+ New</button>
-    <div id="chatList"></div>
+  <input id="search" placeholder="Search..." oninput="searchChats()">
+  <button onclick="newChat()">+ New Chat</button>
+  <div id="chatList"></div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
-    <div id="messages" class="messages"></div>
+  <div id="messages"></div>
 
-    <div class="top">
-        <input id="prompt" placeholder="Type message..." 
-               onkeydown="if(event.key==='Enter') send()">
-        <button onclick="send()">Send</button>
-    </div>
+  <div style="display:flex">
+    <input id="prompt" placeholder="Type a message..." onkeydown="if(event.key==='Enter') send()">
+    <button onclick="send()">Send</button>
+  </div>
 </div>
 
 <script>
+let token = localStorage.getItem("token")
+let socket = io({ auth: { token } })
 
-// ---------------- GLOBAL ----------------
-let socket;
-let room = "room_" + Date.now();
-let currentAI = null;
+let room = "room_" + Date.now()
+let currentAI = null
 
-// ---------------- INIT ----------------
-function init(){
-    socket = io(window.location.origin);
-
-    socket.emit("join", { room });
-
-    socket.on("message", d => {
-        if (!d || !d.text) return;
-        add(d.text);
-    });
-
-    // 🔥 STREAMING HANDLER (FIXED)
-    socket.on("ai_stream", d => {
-        if (!d || !d.token) return;
-
-        if (!currentAI){
-            currentAI = create("");
-        }
-
-        currentAI.textContent += d.token;
-
-        messages.scrollTop = messages.scrollHeight;
-    });
+// ---------------- ERROR UI ----------------
+function showError(msg){
+  banner.innerText = msg
+  banner.style.display = "block"
+  setTimeout(()=>banner.style.display="none",3000)
 }
+
+// ---------------- SAFE FETCH ----------------
+async function safeFetch(url, opt={}){
+  try{
+    let r = await fetch(url, opt)
+    let t = await r.text()
+
+    if(!t) return []
+
+    return JSON.parse(t)
+  }catch(e){
+    console.error("Fetch error:", e)
+    showError("Network / JSON error")
+    return []
+  }
+}
+
+// ---------------- SOCKET ----------------
+socket.emit("join",{room})
+
+socket.on("ai_stream", d=>{
+  if(!currentAI) currentAI = addMessage("ai","")
+  currentAI.innerText += d.token
+  messages.scrollTop = messages.scrollHeight
+})
 
 // ---------------- SEND ----------------
 function send(){
-    const input = document.getElementById("prompt");
-    const text = input.value.trim();
+  let input = document.getElementById("prompt")
+  let text = input.value.trim()
 
-    if (!text) return;
+  if(!text) return
 
-    add(text);
+  addMessage("user", text)
 
-    // 🔥 reset AI bubble
-    currentAI = null;
+  currentAI = addMessage("ai","")
 
-    socket.emit("message", {
-        prompt: text,
-        room: room
-    });
+  socket.emit("message",{
+    prompt: text,
+    room,
+    token
+  })
 
-    input.value = "";
+  input.value = ""
 }
 
 // ---------------- UI ----------------
-function add(text){
-    const d = document.createElement("div");
-    d.className = "msg";
-    d.textContent = text;
-    messages.appendChild(d);
+function addMessage(role,text){
+  let d = document.createElement("div")
+  d.className = "msg " + role
+  d.innerText = text
+  messages.appendChild(d)
+  return d
 }
 
-function create(text){
-    const d = document.createElement("div");
-    d.className = "msg";
-    d.textContent = text;
-    messages.appendChild(d);
-    return d;
-}
-
-// ---------------- LOAD CHATS ----------------
+// ---------------- CHAT LIST ----------------
 async function loadChats(){
-    try{
-        const res = await fetch("/chats");
-        const data = await res.json();
+  chatList.innerHTML = "Loading..."
 
-        if (!Array.isArray(data)) throw "bad";
+  let data = await safeFetch("/chats",{
+    headers:{Authorization:"Bearer "+token}
+  })
 
-        chatList.innerHTML = "";
+  chatList.innerHTML = ""
 
-        data.forEach(c=>{
-            const d = document.createElement("div");
-            d.className = "chat-item";
-            d.innerText = c.title || "Chat";
-            d.onclick = ()=>loadChat(c.room);
-            chatList.appendChild(d);
-        });
+  if(!Array.isArray(data)){
+    showError("Invalid chats data")
+    return
+  }
 
-    }catch(e){
-        console.error(e);
-        chatList.innerHTML = "Error loading chats";
-    }
+  data.forEach(c=>{
+    let d = document.createElement("div")
+    d.className = "chat-item"
+    d.innerText = c.title || c.room
+
+    d.onclick = ()=>loadChat(c.room)
+
+    chatList.appendChild(d)
+  })
 }
 
-// ---------------- LOAD SINGLE CHAT ----------------
+// ---------------- LOAD CHAT ----------------
 async function loadChat(r){
-    room = r;
-    messages.innerHTML = "";
+  room = r
+  messages.innerHTML = ""
 
-    try{
-        const res = await fetch("/chat/" + r);
-        const data = await res.json();
+  let data = await safeFetch("/chat/"+r,{
+    headers:{Authorization:"Bearer "+token}
+  })
 
-        if (!Array.isArray(data)) throw "bad";
+  if(!Array.isArray(data)) return
 
-        data.forEach(m=>{
-            add(m.prompt);
-            add(m.response);
-        });
-
-    }catch(e){
-        console.error(e);
-    }
-}
-
-// ---------------- NEW CHAT ----------------
-function newChat(){
-    room = "room_" + Date.now();
-    messages.innerHTML = "";
+  data.forEach(m=>{
+    addMessage("user", m.prompt)
+    addMessage("ai", m.response)
+  })
 }
 
 // ---------------- SEARCH ----------------
 async function searchChats(){
-    const q = document.getElementById("search").value;
+  let q = search.value
 
-    try{
-        const res = await fetch("/search_chats?q=" + q);
-        const data = await res.json();
+  let data = await safeFetch("/chats",{
+    headers:{Authorization:"Bearer "+token}
+  })
 
-        if (!Array.isArray(data)) return;
+  chatList.innerHTML = ""
 
-        chatList.innerHTML = "";
+  if(!Array.isArray(data)) return
 
-        data.forEach(c=>{
-            const d = document.createElement("div");
-            d.className = "chat-item";
-            d.innerText = c.title;
-            d.onclick = ()=>loadChat(c.room);
-            chatList.appendChild(d);
-        });
-
-    }catch(e){
-        console.error(e);
-    }
+  data
+    .filter(c => c.title?.toLowerCase().includes(q.toLowerCase()))
+    .forEach(c=>{
+      let d = document.createElement("div")
+      d.className="chat-item"
+      d.innerText=c.title
+      d.onclick=()=>loadChat(c.room)
+      chatList.appendChild(d)
+    })
 }
 
-// ---------------- START ----------------
-init();
-loadChats();
+// ---------------- NEW CHAT ----------------
+function newChat(){
+  room = "room_" + Date.now()
+  messages.innerHTML = ""
+}
 
-{% extends "base.html" %}
-{% block content %}
-
-<div class="messages" id="messages"></div>
-
-<div class="input-bar">
-    <input id="prompt" placeholder="Message..."
-           onkeydown="if(event.key==='Enter') send()">
-    <button onclick="send()">Send</button>
-</div>
-
-{% endblock %}
-
+// ---------------- INIT ----------------
+loadChats()
 </script>
 
 </body>
 </html>
+
+
