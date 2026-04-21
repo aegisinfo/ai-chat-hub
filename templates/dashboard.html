@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#111;color:white;font-family:Arial;">
+
+<h2>🌍 Global Chat Dashboard</h2>
+
+<a href="/chat-page">Back</a>
+
+<div>
+{% for c in convos %}
+    <div style="background:#222;margin:10px;padding:10px;">
+        <b>{{ c.source }}</b><br>
+        <small>{{ c.timestamp }}</small>
+        <pre>{{ c.content[:500] }}</pre>
+    </div>
+{% endfor %}
+</div>
+
+</body>
+</html>

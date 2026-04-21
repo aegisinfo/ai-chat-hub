@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AEGIS Chat</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+body{
+    margin:0;
+    display:flex;
+    height:100vh;
+    background:#020617;
+    color:white;
+    font-family:sans-serif;
+}
+
+.sidebar{
+    width:260px;
+    background:#111827;
+    padding:10px;
+    overflow:auto;
+}
+
+.main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+.messages{
+    flex:1;
+    overflow:auto;
+    padding:20px;
+}
+
+.msg{
+    margin-bottom:10px;
+    padding:10px;
+    background:#1f2937;
+    border-radius:8px;
+}
+
+.chat-item{
+    padding:10px;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+.chat-item:hover{
+    background:#1f2937;
+}
+
+input{
+    flex:1;
+    padding:10px;
+    background:#1f2937;
+    color:white;
+    border:none;
+    border-radius:6px;
+}
+
+button{
+    padding:10px;
+    background:#22c55e;
+    border:none;
+    border-radius:6px;
+    color:white;
+    margin-left:5px;
+}
+
+.top{
+    display:flex;
+    padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <input id="search" placeholder="Search..." oninput="searchChats()">
+    <button onclick="newChat()">+ New</button>
+    <div id="chatList"></div>
+</div>
+
+<div class="main">
+    <div id="messages" class="messages"></div>
+
+    <div class="top">
+        <input id="prompt" placeholder="Type message..." 
+               onkeydown="if(event.key==='Enter') send()">
+        <button onclick="send()">Send</button>
+    </div>
+</div>
+
+<script>
+
+// ---------------- GLOBAL ----------------
+let socket;
+let room = "room_" + Date.now();
+let currentAI = null;
+
+// ---------------- INIT ----------------
+function init(){
+    socket = io(window.location.origin);
+
+    socket.emit("join", { room });
+
+    socket.on("message", d => {
+        if (!d || !d.text) return;
+        add(d.text);
+    });
+
+    // 🔥 STREAMING HANDLER (FIXED)
+    socket.on("ai_stream", d => {
+        if (!d || !d.token) return;
+
+        if (!currentAI){
+            currentAI = create("");
+        }
+
+        currentAI.textContent += d.token;
+
+        messages.scrollTop = messages.scrollHeight;
+    });
+}
+
+// ---------------- SEND ----------------
+function send(){
+    const input = document.getElementById("prompt");
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    add(text);
+
+    // 🔥 reset AI bubble
+    currentAI = null;
+
+    socket.emit("message", {
+        prompt: text,
+        room: room
+    });
+
+    input.value = "";
+}
+
+// ---------------- UI ----------------
+function add(text){
+    const d = document.createElement("div");
+    d.className = "msg";
+    d.textContent = text;
+    messages.appendChild(d);
+}
+
+function create(text){
+    const d = document.createElement("div");
+    d.className = "msg";
+    d.textContent = text;
+    messages.appendChild(d);
+    return d;
+}
+
+// ---------------- LOAD CHATS ----------------
+async function loadChats(){
+    try{
+        const res = await fetch("/chats");
+        const data = await res.json();
+
+        if (!Array.isArray(data)) throw "bad";
+
+        chatList.innerHTML = "";
+
+        data.forEach(c=>{
+            const d = document.createElement("div");
+            d.className = "chat-item";
+            d.innerText = c.title || "Chat";
+            d.onclick = ()=>loadChat(c.room);
+            chatList.appendChild(d);
+        });
+
+    }catch(e){
+        console.error(e);
+        chatList.innerHTML = "Error loading chats";
+    }
+}
+
+// ---------------- LOAD SINGLE CHAT ----------------
+async function loadChat(r){
+    room = r;
+    messages.innerHTML = "";
+
+    try{
+        const res = await fetch("/chat/" + r);
+        const data = await res.json();
+
+        if (!Array.isArray(data)) throw "bad";
+
+        data.forEach(m=>{
+            add(m.prompt);
+            add(m.response);
+        });
+
+    }catch(e){
+        console.error(e);
+    }
+}
+
+// ---------------- NEW CHAT ----------------
+function newChat(){
+    room = "room_" + Date.now();
+    messages.innerHTML = "";
+}
+
+// ---------------- SEARCH ----------------
+async function searchChats(){
+    const q = document.getElementById("search").value;
+
+    try{
+        const res = await fetch("/search_chats?q=" + q);
+        const data = await res.json();
+
+        if (!Array.isArray(data)) return;
+
+        chatList.innerHTML = "";
+
+        data.forEach(c=>{
+            const d = document.createElement("div");
+            d.className = "chat-item";
+            d.innerText = c.title;
+            d.onclick = ()=>loadChat(c.room);
+            chatList.appendChild(d);
+        });
+
+    }catch(e){
+        console.error(e);
+    }
+}
+
+// ---------------- START ----------------
+init();
+loadChats();
+
+{% extends "base.html" %}
+{% block content %}
+
+<div class="messages" id="messages"></div>
+
+<div class="input-bar">
+    <input id="prompt" placeholder="Message..."
+           onkeydown="if(event.key==='Enter') send()">
+    <button onclick="send()">Send</button>
+</div>
+
+{% endblock %}
+
+</script>
+
+</body>
+</html>

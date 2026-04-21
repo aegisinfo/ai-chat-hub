@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<style>
+body{background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh}
+.card{background:#111827;padding:40px;border-radius:16px;width:400px}
+input,button{width:100%;padding:14px;margin:10px 0}
+</style>
+
+<body>
+<div class="card">
+<form id="f">
+<input id="username" placeholder="Username">
+<input id="password" type="password">
+<label><input type="checkbox" id="remember"> Remember</label>
+<button>Login</button>
+</form>
+</div>
+
+<script>
+if(localStorage.getItem("access")) location="/chat-page"
+
+f.onsubmit=async e=>{
+e.preventDefault()
+
+let r=await fetch("/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+username:username.value,
+password:password.value
+})
+})
+
+let d=await r.json()
+
+if(r.ok){
+localStorage.setItem("access",d.access)
+localStorage.setItem("refresh",d.refresh)
+location="/chat-page"
+}else alert("login failed")
+}
+</script>
+</body>
+</html>
