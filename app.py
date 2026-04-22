@@ -10,6 +10,18 @@ from flask_jwt_extended import (
 )
 from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
+import os
+import sys
+
+# Fix for Python 3.13 compatibility
+try:
+    import distutils.util
+except ImportError:
+    # For Python 3.13+, distutils is removed
+    pass
+
+# Set environment variable for eventlet
+os.environ['EVENTLET_NO_DISTUTILS'] = '1'
 
 # ========================
 # DATABASE CONFIGURATION
@@ -420,3 +432,22 @@ if __name__ == "__main__":
     print(f"💾 Database: {'Railway PostgreSQL' if 'postgresql' in DATABASE_URL else 'SQLite (Local)'}")
     print(f"📡 WebSocket: Enabled\n")
     socketio.run(app, host="0.0.0.0", port=port, debug=False)
+
+# ========================
+# RUN THE APP
+# ========================
+if __name__ == "__main__":
+    init_db()
+    port = int(os.getenv("PORT", 5001))
+    
+    # Check if running on Railway (production)
+    is_production = os.getenv("RAILWAY_ENVIRONMENT") == "production" or os.getenv("DATABASE_URL")
+    
+    if is_production:
+        # Production: Use simpler async mode
+        print(f"\n🚀 AI Chat Hub Running on Railway (Production)")
+        socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
+    else:
+        # Development: Use eventlet
+        print(f"\n🚀 AI Chat Hub Running (Development)")
+        socketio.run(app, host="0.0.0.0", port=port, debug=True)
