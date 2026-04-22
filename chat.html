@@ -2,47 +2,56 @@
 <html>
 <head>
     <title>AEGIS AI Chat Hub</title>
+    <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #1a1a2e; color: white; }
-        .container { max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; }
-        .sidebar { width: 300px; background: #16213e; padding: 20px; border-radius: 10px; }
-        .chat-area { flex: 1; background: #16213e; padding: 20px; border-radius: 10px; }
-        .messages { height: 500px; overflow-y: auto; margin-bottom: 20px; }
-        .msg { padding: 10px; margin: 10px 0; border-radius: 10px; }
-        .user { background: #0f3460; text-align: right; }
-        .assistant { background: #e94560; }
-        input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
-        button { background: #e94560; color: white; cursor: pointer; }
-        .conversation { padding: 10px; margin: 5px 0; background: #0f3460; border-radius: 5px; cursor: pointer; }
-        .conversation:hover { background: #e94560; }
-        .active { background: #e94560; }
-        h3 { margin-top: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0f172a; color: white; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; display: flex; gap: 20px; }
+        .sidebar { width: 300px; background: #1e293b; border-radius: 10px; padding: 20px; }
+        .chat-area { flex: 1; background: #1e293b; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; height: 80vh; }
+        .messages { flex: 1; overflow-y: auto; margin-bottom: 20px; }
+        .msg { padding: 10px; margin: 10px 0; border-radius: 10px; max-width: 70%; }
+        .user { background: #3b82f6; margin-left: auto; text-align: right; }
+        .assistant { background: #10b981; margin-right: auto; }
+        input, select, button { padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
+        input { flex: 1; background: #334155; color: white; }
+        button { background: #3b82f6; color: white; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .conversation { padding: 10px; margin: 5px 0; background: #334155; border-radius: 5px; cursor: pointer; }
+        .conversation:hover { background: #3b82f6; }
+        .active { background: #10b981; }
+        h3 { margin-bottom: 15px; }
+        .input-bar { display: flex; gap: 10px; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-warning { background: #f59e0b; }
+        .btn-warning:hover { background: #d97706; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="sidebar">
-            <h3>AI Chat Hub</h3>
-            <button onclick="newConversation()">+ New Chat</button>
-            <select id="aiSelect">
+            <h3>🤖 AI Chat Hub</h3>
+            <button onclick="newConversation()" style="width: 100%;">+ New Conversation</button>
+            <select id="aiSelect" style="width: 100%;">
                 <option value="mock">Mock AI</option>
                 <option value="openai">ChatGPT</option>
                 <option value="claude">Claude</option>
                 <option value="groq">Groq</option>
             </select>
-            <button onclick="exportAll()">Export All</button>
-            <button onclick="importChat()">Import Chat</button>
-            <hr>
+            <button onclick="exportAll()" style="width: 100%;" class="btn-warning">📦 Export All</button>
+            <button onclick="importChat()" style="width: 100%;">📥 Import Chat</button>
+            <hr style="margin: 15px 0; border-color: #334155;">
             <div id="convList"></div>
         </div>
         <div class="chat-area">
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                 <h3 id="convTitle">Select a conversation</h3>
-                <button onclick="logout()">Logout</button>
+                <button onclick="logout()" class="btn-danger">Logout</button>
             </div>
             <div id="messages" class="messages"></div>
-            <div>
-                <input type="text" id="messageInput" placeholder="Type your message..." style="width: 80%;">
+            <div class="input-bar">
+                <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
                 <button onclick="sendMessage()">Send</button>
             </div>
         </div>
@@ -62,25 +71,49 @@
         }
 
         async function demoLogin() {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: 'demo', password: 'demo123'})
-            });
-            const data = await res.json();
-            token = data.token;
-            localStorage.setItem('token', token);
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: 'demo', password: 'demo123'})
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                } else {
+                    // Try admin
+                    const res2 = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({username: 'admin', password: 'admin123'})
+                    });
+                    if (res2.ok) {
+                        const data = await res2.json();
+                        token = data.token;
+                        localStorage.setItem('token', token);
+                    }
+                }
+            } catch(e) {
+                console.error('Login failed:', e);
+            }
         }
 
         async function loadConversations() {
+            if (!token) return;
             const res = await fetch('/api/conversations', {
                 headers: {'Authorization': `Bearer ${token}`}
             });
+            if (!res.ok) return;
             const convs = await res.json();
             const list = document.getElementById('convList');
+            if (convs.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#64748b;">No conversations yet<br>Click "New Conversation"</div>';
+                return;
+            }
             list.innerHTML = convs.map(c => `
                 <div class="conversation ${currentConvId === c.id ? 'active' : ''}" onclick="loadConversation(${c.id})">
-                    ${c.title}
+                    ${c.title.substring(0, 30)}
                 </div>
             `).join('');
         }
@@ -93,9 +126,14 @@
             const data = await res.json();
             document.getElementById('convTitle').innerText = data.title;
             const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = data.messages.map(m => `
-                <div class="msg ${m.role}">${m.content}</div>
-            `).join('');
+            if (data.messages.length === 0) {
+                messagesDiv.innerHTML = '<div style="text-align:center; color:#64748b;">No messages yet. Start chatting!</div>';
+            } else {
+                messagesDiv.innerHTML = data.messages.map(m => `
+                    <div class="msg ${m.role}">${escapeHtml(m.content)}</div>
+                `).join('');
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             await loadConversations();
         }
 
@@ -114,24 +152,24 @@
             const content = input.value.trim();
             if (!content || !currentConvId) return;
             
-            // Add user message
             const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML += `<div class="msg user">${content}</div>`;
+            if (messagesDiv.children.length === 1 && messagesDiv.children[0].innerText.includes('No messages')) {
+                messagesDiv.innerHTML = '';
+            }
+            messagesDiv.innerHTML += `<div class="msg user">${escapeHtml(content)}</div>`;
             input.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Save user message
             await fetch(`/api/conversation/${currentConvId}/message`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({role: 'user', content: content})
             });
             
-            // Get AI response
-            const aiResponse = `AI (${aiProvider}): I received "${content}". This is a demo response.`;
-            messagesDiv.innerHTML += `<div class="msg assistant">${aiResponse}</div>`;
+            const aiResponse = `🤖 ${aiProvider.toUpperCase()}: I received "${content.substring(0, 100)}". This is a demo response.`;
+            messagesDiv.innerHTML += `<div class="msg assistant">${escapeHtml(aiResponse)}</div>`;
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Save AI response
             await fetch(`/api/conversation/${currentConvId}/message`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
@@ -144,6 +182,10 @@
                 headers: {'Authorization': `Bearer ${token}`}
             });
             const convs = await res.json();
+            if (convs.length === 0) {
+                alert('No conversations to export');
+                return;
+            }
             const ids = convs.map(c => c.id);
             const exportRes = await fetch('/api/batch-export', {
                 method: 'POST',
@@ -156,6 +198,7 @@
             link.href = URL.createObjectURL(blob);
             link.download = `all_conversations_${Date.now()}.json`;
             link.click();
+            alert(`Exported ${data.total} conversations!`);
         }
 
         function importChat() {
@@ -167,14 +210,17 @@
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     const content = event.target.result;
-                    const title = prompt('Title:', `Imported ${new Date().toLocaleString()}`);
+                    const title = prompt('Enter title for this conversation:', `Imported ${new Date().toLocaleString()}`);
                     if (title) {
-                        await fetch('/api/import', {
+                        const res = await fetch('/api/import', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
                             body: JSON.stringify({content: content, title: title})
                         });
+                        const data = await res.json();
+                        alert(`Imported ${data.message_count} messages!`);
                         await loadConversations();
+                        await loadConversation(data.conversation_id);
                     }
                 };
                 reader.readAsText(file);
@@ -185,6 +231,12 @@
         function logout() {
             localStorage.clear();
             location.reload();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         init();
