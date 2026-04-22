@@ -1,44 +1,92 @@
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
 <style>
-body{background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh}
-.card{background:#111827;padding:40px;border-radius:16px;width:400px}
-input,button{width:100%;padding:14px;margin:10px 0}
+body {
+    background:#020617;
+    color:white;
+    font-family:Inter, sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card {
+    background:#111827;
+    padding:40px;
+    border-radius:16px;
+    width:320px;
+}
+
+input {
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    background:#020617;
+    border:1px solid #1f2937;
+    color:white;
+    border-radius:8px;
+}
+
+button {
+    width:100%;
+    padding:12px;
+    background:#22c55e;
+    border:none;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+}
 </style>
+</head>
 
 <body>
+
 <div class="card">
-<form id="f">
+<h2>Login</h2>
+
 <input id="username" placeholder="Username">
-<input id="password" type="password">
-<label><input type="checkbox" id="remember"> Remember</label>
-<button>Login</button>
-</form>
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p><a href="/register-page" style="color:#22c55e">Create account</a></p>
 </div>
 
 <script>
-if(localStorage.getItem("access")) location="/chat-page"
 
-f.onsubmit=async e=>{
-e.preventDefault()
-
-let r=await fetch("/login",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-username:username.value,
-password:password.value
-})
-})
-
-let d=await r.json()
-
-if(r.ok){
-localStorage.setItem("access",d.access)
-localStorage.setItem("refresh",d.refresh)
-location="/chat-page"
-}else alert("login failed")
+// AUTO LOGIN
+if(localStorage.getItem("token")){
+    location="/chat-page"
 }
+
+async function login(){
+    const res = await fetch("/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            username:username.value,
+            password:password.value
+        })
+    })
+
+    const data = await res.json()
+
+    if(res.ok){
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("user", data.user)
+
+        location="/chat-page"
+    } else {
+        alert("Login failed")
+    }
+}
+
 </script>
+
 </body>
 </html>

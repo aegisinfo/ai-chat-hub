@@ -1,55 +1,193 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>AI Chat Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            width: 350px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .tab {
+            display: inline-block;
+            width: 50%;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            background: #f0f0f0;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .form {
+            display: none;
+            margin-top: 20px;
+        }
+        .form.active {
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+    </style>
+</head>
 <body>
+    <div class="container" id="authContainer">
+        <div>
+            <div class="tab active" onclick="switchTab('login')">Login</div>
+            <div class="tab" onclick="switchTab('register')">Register</div>
+        </div>
+        
+        <div id="loginForm" class="form active">
+            <h3>Login</h3>
+            <input type="text" id="loginUsername" placeholder="Username">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <div id="loginError" class="error"></div>
+        </div>
+        
+        <div id="registerForm" class="form">
+            <h3>Register</h3>
+            <input type="text" id="regUsername" placeholder="Username (min 3 chars)">
+            <input type="password" id="regPassword" placeholder="Password (min 3 chars)">
+            <button onclick="register()">Register</button>
+            <div id="regError"></div>
+        </div>
+    </div>
 
-<h2>Login</h2>
-
-<input id="u" placeholder="username">
-<input id="p" placeholder="password" type="password">
-<button onclick="login()">Login</button>
-
-<script>
-async function login(){
- let r=await fetch("/login",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    username:u.value,
-    password:p.value
-  })
- })
- let d=await r.json()
- localStorage.setItem("token",d.token)
- location="/chat-page"
-}
-</script>
-```
-
-
-<input id="username" placeholder="username">
-<input id="password" type="password" placeholder="password">
-<button onclick="login()">Login</button>
-
-<a href="/register-page">Register</a>
-
-<script>
-async function login() {
-    const res = await fetch("/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-            username: username.value,
-            password: password.value
-        })
-    });
-
-    if (res.ok) {
-        window.location = "/chat-page";
-    } else {
-        alert("Login failed");
-    }
-}
-</script>
-
+    <script>
+        async function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if (tab === 'login') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+                document.getElementById('registerForm').classList.remove('active');
+                document.getElementById('loginError').textContent = '';
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+                document.getElementById('loginForm').classList.remove('active');
+                document.getElementById('regError').textContent = '';
+            }
+        }
+        
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                document.getElementById('loginError').textContent = 'Please enter username and password';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    alert('Login successful!');
+                    location.reload();
+                } else {
+                    document.getElementById('loginError').textContent = data.error;
+                }
+            } catch (error) {
+                document.getElementById('loginError').textContent = 'Connection error: ' + error.message;
+            }
+        }
+        
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            
+            if (!username || !password) {
+                document.getElementById('regError').textContent = 'Please enter username and password';
+                document.getElementById('regError').className = 'error';
+                return;
+            }
+            
+            if (username.length < 3) {
+                document.getElementById('regError').textContent = 'Username must be at least 3 characters';
+                document.getElementById('regError').className = 'error';
+                return;
+            }
+            
+            if (password.length < 3) {
+                document.getElementById('regError').textContent = 'Password must be at least 3 characters';
+                document.getElementById('regError').className = 'error';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('regError').className = 'success';
+                    document.getElementById('regError').textContent = '✓ Registration successful! Redirecting to login...';
+                    setTimeout(() => switchTab('login'), 2000);
+                } else {
+                    document.getElementById('regError').className = 'error';
+                    document.getElementById('regError').textContent = data.error;
+                }
+            } catch (error) {
+                document.getElementById('regError').className = 'error';
+                document.getElementById('regError').textContent = 'Connection error: ' + error.message;
+            }
+        }
+    </script>
 </body>
 </html>

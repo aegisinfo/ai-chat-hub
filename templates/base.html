@@ -3,35 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <title>AEGIS</title>
-<link rel="stylesheet" href="/static/styles.css">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+body {
+    margin:0;
+    font-family: Inter, sans-serif;
+    background:#020617;
+    color:#e5e7eb;
+}
+
+/* TOP BAR */
+.topbar {
+    height:50px;
+    background:#020617;
+    border-bottom:1px solid #1f2937;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+}
+
+/* USER BADGE */
+.user {
+    background:#111827;
+    padding:6px 12px;
+    border-radius:8px;
+}
+
+/* CENTER CARD */
+.center {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card {
+    background:#111827;
+    padding:40px;
+    border-radius:16px;
+    width:360px;
+}
+
+input {
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    background:#020617;
+    border:1px solid #1f2937;
+    color:white;
+    border-radius:8px;
+}
+
+button {
+    width:100%;
+    padding:12px;
+    background:#22c55e;
+    border:none;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+}
+</style>
+
 </head>
-
 <body>
-<div class="app">
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>AEGIS</h2>
-        <button onclick="newChat()">+ New Chat</button>
+{% block content %}{% endblock %}
 
-        <input id="search" placeholder="Search..." oninput="searchChats()">
-
-        <div id="chatList"></div>
-
-        <hr>
-
-        <a href="/dashboard">📊 Dashboard</a>
-        <a href="/billing">💳 Billing</a>
-    </div>
-
-    <!-- MAIN -->
-    <div class="main">
-        {% block content %}{% endblock %}
-    </div>
-
-</div>
-
-<script src="/static/app.js"></script>
 </body>
 </html>
