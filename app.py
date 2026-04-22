@@ -24,7 +24,6 @@ CORS(app, supports_credentials=True)
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
-# Models
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -49,7 +48,6 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create tables
 with app.app_context():
     db.create_all()
     if not User.query.first():
@@ -63,7 +61,6 @@ with app.app_context():
         db.session.add(demo)
         db.session.commit()
 
-# Routes
 @app.route("/")
 def index():
     return render_template("chat.html")
