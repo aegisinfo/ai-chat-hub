@@ -133,6 +133,9 @@ def billing():
 
 # ---------------- SOCKET ----------------
 
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
+
+
 @socketio.on("connect")
 def connect(auth):
     if not auth or not auth.get("token"):
