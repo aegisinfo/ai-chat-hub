@@ -1,730 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AEGIS - AI Chat Hub</title>
+    <title>AEGIS AI Chat Hub</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            background: #020617;
-            color: #e5e7eb;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: #0f172a;
-            border-right: 1px solid #1e293b;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .sidebar-header h2 {
-            font-size: 20px;
-            margin-bottom: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .new-chat-btn {
-            width: 100%;
-            padding: 12px;
-            background: #22c55e;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .new-chat-btn:hover { background: #16a34a; }
-
-        .ai-selector {
-            margin: 15px 0;
-        }
-
-        .ai-selector select {
-            width: 100%;
-            padding: 10px;
-            background: #1e293b;
-            color: white;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .export-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .export-buttons button {
-            flex: 1;
-            padding: 8px;
-            background: #3b82f6;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .export-buttons button:hover { background: #2563eb; }
-
-        .batch-export-btn {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            background: #8b5cf6;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .batch-export-btn:hover { background: #7c3aed; }
-
-        .import-btn {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            background: #f59e0b;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .import-btn:hover { background: #d97706; }
-
-        .conversations-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .conversation-item {
-            padding: 12px;
-            margin: 5px 0;
-            background: #1e293b;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .conversation-item:hover {
-            background: #334155;
-            transform: translateX(5px);
-        }
-
-        .conversation-item.active {
-            background: #22c55e;
-            color: white;
-        }
-
-        .conversation-title {
-            font-weight: 500;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .conversation-meta {
-            font-size: 11px;
-            opacity: 0.7;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .delete-conv {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .delete-conv:hover { background: #dc2626; }
-
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #020617;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #1e293b;
-            background: #0f172a;
-        }
-
-        .topbar h1 {
-            font-size: 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .user-info {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .logout-btn {
-            padding: 8px 16px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .msg {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 10px 0;
-            word-wrap: break-word;
-        }
-
-        .user {
-            background: #1e293b;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-
-        .assistant {
-            background: #0f172a;
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
-            border-left: 3px solid #22c55e;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #64748b;
-        }
-
-        .input-bar {
-            display: flex;
-            padding: 20px;
-            border-top: 1px solid #1e293b;
-            background: #0f172a;
-            gap: 10px;
-        }
-
-        .input-bar input {
-            flex: 1;
-            padding: 12px;
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .input-bar input:focus {
-            outline: none;
-            border-color: #22c55e;
-        }
-
-        .input-bar button {
-            padding: 12px 24px;
-            background: #22c55e;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .input-bar button:hover { background: #16a34a; }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.success { background: #22c55e; }
-        .notification.error { background: #ef4444; }
-        .notification.info { background: #3b82f6; }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #1a1a2e; color: white; }
+        .container { max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; }
+        .sidebar { width: 300px; background: #16213e; padding: 20px; border-radius: 10px; }
+        .chat-area { flex: 1; background: #16213e; padding: 20px; border-radius: 10px; }
+        .messages { height: 500px; overflow-y: auto; margin-bottom: 20px; }
+        .msg { padding: 10px; margin: 10px 0; border-radius: 10px; }
+        .user { background: #0f3460; text-align: right; }
+        .assistant { background: #e94560; }
+        input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
+        button { background: #e94560; color: white; cursor: pointer; }
+        .conversation { padding: 10px; margin: 5px 0; background: #0f3460; border-radius: 5px; cursor: pointer; }
+        .conversation:hover { background: #e94560; }
+        .active { background: #e94560; }
+        h3 { margin-top: 0; }
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <div class="sidebar-header">
-        <h2>🤖 AEGIS AI Hub</h2>
-        <button class="new-chat-btn" onclick="createNewConversation()">+ New Conversation</button>
-        
-        <div class="ai-selector">
-            <select id="aiProviderSelect">
-                <option value="openai">ChatGPT (OpenAI)</option>
-                <option value="groq">Groq (Mixtral)</option>
-                <option value="claude">Claude (Anthropic)</option>
-                <option value="mock">Mock AI (Testing)</option>
+    <div class="container">
+        <div class="sidebar">
+            <h3>AI Chat Hub</h3>
+            <button onclick="newConversation()">+ New Chat</button>
+            <select id="aiSelect">
+                <option value="mock">Mock AI</option>
+                <option value="openai">ChatGPT</option>
+                <option value="claude">Claude</option>
+                <option value="groq">Groq</option>
             </select>
+            <button onclick="exportAll()">Export All</button>
+            <button onclick="importChat()">Import Chat</button>
+            <hr>
+            <div id="convList"></div>
         </div>
-        
-        <div class="export-buttons">
-            <button onclick="exportConversation('json')">📄 Export JSON</button>
-            <button onclick="exportConversation('txt')">📃 Export TXT</button>
-        </div>
-        
-        <button class="batch-export-btn" onclick="batchExport()">📦 Export All Conversations</button>
-        <button class="import-btn" onclick="importConversation()">📥 Import Conversation</button>
-    </div>
-    
-    <div class="conversations-list" id="conversationsList">
-        <div class="empty-state">No conversations yet.<br>Click "New Conversation" to start!</div>
-    </div>
-</div>
-
-<div class="main">
-    <div class="topbar">
-        <h1>AEGIS <span style="font-size:14px;">AI Chat Hub</span></h1>
-        <div class="user-info">
-            <span id="userName">Loading...</span>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="chat-area">
+            <div style="display: flex; justify-content: space-between;">
+                <h3 id="convTitle">Select a conversation</h3>
+                <button onclick="logout()">Logout</button>
+            </div>
+            <div id="messages" class="messages"></div>
+            <div>
+                <input type="text" id="messageInput" placeholder="Type your message..." style="width: 80%;">
+                <button onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
 
-    <div id="messages" class="messages">
-        <div class="empty-state">Select a conversation or create a new one to start chatting!</div>
-    </div>
-
-    <div class="input-bar">
-        <input id="promptInput" type="text" placeholder="Type your message..." 
-               onkeydown="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">Send</button>
-    </div>
-</div>
-
-<script>
-let currentConversationId = null;
-let currentAiProvider = 'mock';
-let userName = '';
-
-// ========================
-// INITIALIZATION
-// ========================
-async function init() {
-    await autoLogin();
-    await loadConversations();
-    
-    document.getElementById('aiProviderSelect').addEventListener('change', (e) => {
-        currentAiProvider = e.target.value;
-    });
-}
-
-async function autoLogin() {
-    try {
+    <script>
         let token = localStorage.getItem('token');
-        if (!token) {
-            const response = await fetch('/api/login', {
+        let currentConvId = null;
+        let aiProvider = 'mock';
+
+        async function init() {
+            if (!token) {
+                await demoLogin();
+            }
+            await loadConversations();
+            document.getElementById('aiSelect').onchange = (e) => aiProvider = e.target.value;
+        }
+
+        async function demoLogin() {
+            const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: 'demo', password: 'demo123' })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: 'demo', password: 'demo123'})
+            });
+            const data = await res.json();
+            token = data.token;
+            localStorage.setItem('token', token);
+        }
+
+        async function loadConversations() {
+            const res = await fetch('/api/conversations', {
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+            const convs = await res.json();
+            const list = document.getElementById('convList');
+            list.innerHTML = convs.map(c => `
+                <div class="conversation ${currentConvId === c.id ? 'active' : ''}" onclick="loadConversation(${c.id})">
+                    ${c.title}
+                </div>
+            `).join('');
+        }
+
+        async function loadConversation(id) {
+            currentConvId = id;
+            const res = await fetch(`/api/conversation/${id}`, {
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+            const data = await res.json();
+            document.getElementById('convTitle').innerText = data.title;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = data.messages.map(m => `
+                <div class="msg ${m.role}">${m.content}</div>
+            `).join('');
+            await loadConversations();
+        }
+
+        async function newConversation() {
+            const res = await fetch('/api/conversation', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({title: `Chat ${new Date().toLocaleString()}`, ai_provider: aiProvider})
+            });
+            const data = await res.json();
+            await loadConversation(data.id);
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content || !currentConvId) return;
+            
+            // Add user message
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<div class="msg user">${content}</div>`;
+            input.value = '';
+            
+            // Save user message
+            await fetch(`/api/conversation/${currentConvId}/message`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({role: 'user', content: content})
             });
             
-            if (response.ok) {
-                const data = await response.json();
-                token = data.token;
-                userName = data.user.username;
-                localStorage.setItem('token', token);
-                localStorage.setItem('user', userName);
-            }
-        } else {
-            userName = localStorage.getItem('user') || 'User';
-        }
-        document.getElementById('userName').textContent = userName;
-    } catch (error) {
-        console.error('Auto-login failed:', error);
-    }
-}
-
-// ========================
-// CONVERSATION FUNCTIONS
-// ========================
-async function loadConversations() {
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        const response = await fetch('/api/conversations', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const conversations = await response.json();
-        
-        const listDiv = document.getElementById('conversationsList');
-        
-        if (!conversations || conversations.length === 0) {
-            listDiv.innerHTML = '<div class="empty-state">No conversations yet.<br>Click "New Conversation" to start!</div>';
-            return;
-        }
-        
-        listDiv.innerHTML = conversations.map(conv => `
-            <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" 
-                 onclick="loadConversation(${conv.id})">
-                <div class="conversation-title">${escapeHtml(conv.title || 'Untitled')}</div>
-                <div class="conversation-meta">
-                    <span>🤖 ${conv.ai_provider || 'mock'}</span>
-                    <span>📅 ${conv.updated_at ? new Date(conv.updated_at).toLocaleString() : 'Just now'}</span>
-                    <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation(${conv.id})">🗑️</button>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Failed to load conversations:', error);
-        document.getElementById('conversationsList').innerHTML = '<div class="empty-state">Error loading conversations. Please refresh.</div>';
-    }
-}
-
-async function loadConversation(conversationId) {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/conversation/${conversationId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const conversation = await response.json();
-        currentConversationId = conversation.id;
-        currentAiProvider = conversation.ai_provider || 'mock';
-        
-        document.getElementById('aiProviderSelect').value = currentAiProvider;
-        
-        const messagesDiv = document.getElementById('messages');
-        const messages = conversation.messages || [];
-        
-        if (messages.length === 0) {
-            messagesDiv.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
-        } else {
-            messagesDiv.innerHTML = messages.map(msg => 
-                `<div class="msg ${msg.role}">${escapeHtml(msg.content || '')}</div>`
-            ).join('');
-        }
-        
-        await loadConversations();
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    } catch (error) {
-        console.error('Failed to load conversation:', error);
-        showNotification('Failed to load conversation', 'error');
-    }
-}
-
-async function createNewConversation() {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/conversation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                title: `Chat ${new Date().toLocaleString()}`,
-                ai_provider: currentAiProvider
-            })
-        });
-        
-        const conversation = await response.json();
-        await loadConversation(conversation.id);
-        await loadConversations();
-        showNotification('New conversation created!', 'success');
-    } catch (error) {
-        console.error('Failed to create conversation:', error);
-        showNotification('Failed to create conversation', 'error');
-    }
-}
-
-async function deleteConversation(conversationId) {
-    if (!confirm('Are you sure you want to delete this conversation?')) return;
-    
-    try {
-        const token = localStorage.getItem('token');
-        await fetch(`/api/conversation/${conversationId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (currentConversationId === conversationId) {
-            currentConversationId = null;
-            document.getElementById('messages').innerHTML = '<div class="empty-state">Select a conversation or create a new one to start chatting!</div>';
-        }
-        
-        await loadConversations();
-        showNotification('Conversation deleted', 'success');
-    } catch (error) {
-        console.error('Failed to delete conversation:', error);
-        showNotification('Failed to delete conversation', 'error');
-    }
-}
-
-// ========================
-// MESSAGE FUNCTIONS
-// ========================
-async function sendMessage() {
-    const input = document.getElementById('promptInput');
-    const content = input.value.trim();
-    
-    if (!content || !currentConversationId) {
-        if (!currentConversationId) {
-            showNotification('Please create or select a conversation first!', 'error');
-        }
-        return;
-    }
-    
-    addMessage(content, 'user');
-    input.value = '';
-    
-    try {
-        const token = localStorage.getItem('token');
-        
-        await fetch(`/api/conversation/${currentConversationId}/message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ role: 'user', content: content })
-        });
-        
-        showNotification('AI is thinking...', 'info');
-        
-        const aiResponse = `🤖 ${currentAiProvider.toUpperCase()}: Thanks for your message! "${content.substring(0, 100)}"\n\nThis is a demo response.`;
-        
-        addMessage(aiResponse, 'assistant');
-        
-        await fetch(`/api/conversation/${currentConversationId}/message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ role: 'assistant', content: aiResponse })
-        });
-        
-        showNotification('Response received!', 'success');
-        
-    } catch (error) {
-        console.error('Failed to send message:', error);
-        showNotification('Failed to send message: ' + error.message, 'error');
-    }
-}
-
-function addMessage(content, role) {
-    const messagesDiv = document.getElementById('messages');
-    
-    if (messagesDiv.children.length === 1 && messagesDiv.children[0].classList?.contains('empty-state')) {
-        messagesDiv.innerHTML = '';
-    }
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `msg ${role}`;
-    messageDiv.textContent = content;
-    messagesDiv.appendChild(messageDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-// ========================
-// EXPORT/IMPORT FUNCTIONS
-// ========================
-async function exportConversation(format) {
-    if (!currentConversationId) {
-        showNotification('No conversation selected', 'error');
-        return;
-    }
-    
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/export/${currentConversationId}?format=${format}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await response.json();
-        
-        if (format === 'json') {
-            downloadFile(JSON.stringify(data, null, 2), `conversation_${currentConversationId}.json`, 'application/json');
-        } else if (format === 'txt') {
-            downloadFile(data.text, `conversation_${currentConversationId}.txt`, 'text/plain');
-        }
-        
-        showNotification('Conversation exported successfully!', 'success');
-    } catch (error) {
-        console.error('Export failed:', error);
-        showNotification('Export failed: ' + error.message, 'error');
-    }
-}
-
-async function batchExport() {
-    try {
-        const conversationIds = await getConversationIds();
-        
-        if (conversationIds.length === 0) {
-            showNotification('No conversations to export', 'error');
-            return;
-        }
-        
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/batch-export', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ conversation_ids: conversationIds })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            downloadFile(JSON.stringify(data, null, 2), `all_conversations_${Date.now()}.json`, 'application/json');
-            showNotification(`Exported ${data.total_conversations || conversationIds.length} conversations!`, 'success');
-        } else {
-            showNotification('Export failed: ' + (data.error || 'Unknown error'), 'error');
-        }
-    } catch (error) {
-        console.error('Batch export failed:', error);
-        showNotification('Batch export failed: ' + error.message, 'error');
-    }
-}
-
-async function getConversationIds() {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/conversations', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const conversations = await response.json();
-        return conversations.map(c => c.id);
-    } catch (error) {
-        console.error('Failed to get conversation IDs:', error);
-        return [];
-    }
-}
-
-async function importConversation() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.txt,.json';
-    fileInput.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const content = event.target.result;
-            const title = prompt('Enter a title for this conversation:', `Imported ${new Date().toLocaleString()}`);
-            if (!title) return;
+            // Get AI response
+            const aiResponse = `AI (${aiProvider}): I received "${content}". This is a demo response.`;
+            messagesDiv.innerHTML += `<div class="msg assistant">${aiResponse}</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('/api/import', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ content: content, title: title })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    showNotification(`Imported ${data.message_count} messages!`, 'success');
-                    await loadConversations();
-                    await loadConversation(data.conversation_id);
-                } else {
-                    showNotification('Import failed: ' + data.error, 'error');
-                }
-            } catch (error) {
-                console.error('Import failed:', error);
-                showNotification('Import failed: ' + error.message, 'error');
-            }
-        };
-        reader.readAsText(file);
-    };
-    fileInput.click();
-}
+            // Save AI response
+            await fetch(`/api/conversation/${currentConvId}/message`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({role: 'assistant', content: aiResponse})
+            });
+        }
 
-// ========================
-// UTILITY FUNCTIONS
-// ========================
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(link.href);
-}
+        async function exportAll() {
+            const res = await fetch('/api/conversations', {
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+            const convs = await res.json();
+            const ids = convs.map(c => c.id);
+            const exportRes = await fetch('/api/batch-export', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({conversation_ids: ids})
+            });
+            const data = await exportRes.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `all_conversations_${Date.now()}.json`;
+            link.click();
+        }
 
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
+        function importChat() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt,.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const content = event.target.result;
+                    const title = prompt('Title:', `Imported ${new Date().toLocaleString()}`);
+                    if (title) {
+                        await fetch('/api/import', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                            body: JSON.stringify({content: content, title: title})
+                        });
+                        await loadConversations();
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
 
-function logout() {
-    localStorage.clear();
-    location.reload();
-}
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Start the app
-init();
-</script>
+        init();
+    </script>
 </body>
 </html>
